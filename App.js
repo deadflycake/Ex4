@@ -6,6 +6,22 @@ Ext.define('CustomApp', {
         this.getData();
     },
     getData: function() {
+        var myFilter = Ext.create('Rally.data.QueryFilter', {
+            property: 'ScheduleState',
+            operator: '=',
+            value: 'Defined'
+        }).or(Ext.create('Rally.data.QueryFilter', {
+            property: 'ScheduleState',
+            operator: '=',
+            value: 'In-Progress'
+        })).or(Ext.create('Rally.data.QueryFilter', {
+            property: 'ScheduleState',
+            operator: '=',
+            value: 'Completed'
+        }));
+        console.log(myFilter.toString());
+        
+        
         // TODO: wsapi data store; on load, aggregate data
         var store = Ext.create('Rally.data.WsapiDataStore', {
             model: 'User Story',
@@ -17,10 +33,7 @@ Ext.define('CustomApp', {
                 }, 
                 scope:this
             },
-            filters: [{
-                property: 'ScheduleState',
-                value:"Defined"
-            }],
+            filters: [myFilter],
             
             autoLoad:true,
             fetch: ['ScheduleState']
@@ -29,23 +42,18 @@ Ext.define('CustomApp', {
     },
     aggregateData: function(storyRecords) {
         // TODO: bucket stories by schedule state; render chart
-        console.log(storyRecords);
-        console.log(storyRecords.length)
-        
+
         var realData = {
-            "Defined": storyRecords.length,
-            "InProgress": 0,
+            "Defined": 0,
+            "In-Progress": 0,
             "Completed": 0
         }
-        console.log(realData);
-        // example data structure format to send to report render function
-        var mockData = {        
-            'backlog': 10,
-            'inprogress': 5,
-            'completed': 15,
-            'accepted': 20
-        }
         
+        Ext.Array.each(storyRecords, function(record) {
+            realData[record.get("ScheduleState")]++;
+        });
+        console.log(realData);
+
         this.renderChart(realData);
     },
     renderChart: function(myData) {
@@ -92,7 +100,7 @@ Ext.define('CustomApp', {
                 data: [myData.Defined]
             },{
                 name: 'In-Progress',
-                data: [myData.InProgress]
+                data: [myData['In-Progress']]
             }, {
                 name: 'Completed',
                 data: [myData.Completed]
